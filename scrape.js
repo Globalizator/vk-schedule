@@ -14,21 +14,20 @@ const fs = require('fs');
 
     await page.waitForSelector('table', { timeout: 15000 }).catch(() => {});
 
-    const tableHTML = await page.evaluate(() => {
+    let tableHTML = await page.evaluate(() => {
         const table = document.querySelector('table');
-        if (!table) return '';
-
-        // Заменяем /away.php?to=... на прямые ссылки
-        table.querySelectorAll('a[data-external-url]').forEach(a => {
-            a.href = a.dataset.externalUrl;
-        });
-
-        return table.outerHTML;
+        return table ? table.outerHTML : '';
     });
 
     await browser.close();
 
     if (tableHTML) {
+        // Заменяем /away.php?to=ENCODED_URL → прямая ссылка
+        tableHTML = tableHTML.replace(
+            /href="\/away\.php\?to=([^"]+)"/g,
+            (match, encoded) => `href="${decodeURIComponent(encoded)}"`
+        );
+
         fs.writeFileSync('schedule.html', tableHTML);
         console.log('Saved successfully');
     } else {
