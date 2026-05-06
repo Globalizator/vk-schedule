@@ -1,0 +1,35 @@
+add_shortcode('vk_schedule2', function() {
+    $cache_key = 'vk_schedule_table2';
+    $cached    = get_transient($cache_key);
+    if ($cached !== false) return $cached;
+
+    $url      = 'https://raw.githubusercontent.com/Globalizator/vk-schedule/main/schedule.html';
+    $response = wp_remote_get($url, ['timeout' => 20]);
+
+    if (is_wp_error($response)) {
+        return '<p>Расписание временно недоступно.</p>';
+    }
+
+    $html = wp_remote_retrieve_body($response);
+
+    if (empty(trim($html))) {
+        return '<p>Расписание обновляется, попробуйте позже.</p>';
+    }
+
+    $output = '
+    <style>
+        .vk-schedule table { border-collapse: collapse; width: 100%; }
+        .vk-schedule td, .vk-schedule th {
+            border: 1px solid #ddd; padding: 8px 12px; vertical-align: top;
+        }
+        .vk-schedule th { background: #f0f0f0; font-weight: bold; }
+        .vk-schedule tr:nth-child(even) td { background: #f9f9f9; }
+        .vk-schedule a { color: inherit; }
+    </style>
+    <div class="vk-schedule">' . $html . '</div>';
+
+    set_transient($cache_key, $output, HOUR_IN_SECONDS);
+    return $output;
+});
+
+//delete_transient('vk_schedule_table2'); //раскомментить для сброса кэша
