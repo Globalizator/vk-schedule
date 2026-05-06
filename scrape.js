@@ -16,7 +16,14 @@ const fs = require('fs');
 
     const tableHTML = await page.evaluate(() => {
         const table = document.querySelector('table');
-        return table ? table.outerHTML : '';
+        if (!table) return '';
+
+        // Заменяем /away.php?to=... на прямые ссылки
+        table.querySelectorAll('a[data-external-url]').forEach(a => {
+            a.href = a.dataset.externalUrl;
+        });
+
+        return table.outerHTML;
     });
 
     await browser.close();
